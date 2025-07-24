@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BLOG</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="head">
+        <h1>TUTORIALS</h1>
+    </header>
+    <nav class="nav">
+    <ul>
+        <div class="nav-left">
+            <li><a href="index.html"><button>Home</button></a></li>
+            <li><a href="tutorials.html"><button>Tutorials</button></a></li>
+            <li><a href="contact.html"><button>Contact</button></a></li>
+            <li><a href="About.html"><button>About</button></a></li>
+            <li><a href="Blog.html"><button id="active">Blog</button></a></li>
+        </div>
+        <div class="nav-right">
+            <li><a href="signin.html"><button>Sign In</button></a></li>
+        </div>
+    </ul>
+</nav>
+    <main class="blog-main">
+        <div id="admin-controls" style="display:none;">
+            <h2>Admin Panel</h2>
+            <form id="add-post-form" class="add-post-form">
+                <input type="text" id="post-title" placeholder="Title" required>
+                <input type="text" id="post-meta" placeholder="Meta (e.g. date, author)" required>
+                <textarea id="post-content" placeholder="Content" required></textarea>
+                <button type="submit" class="admin-btn">Add Post</button>
+            </form>
+            <button id="logout-btn" class="admin-btn" style="background:#d00;margin-top:10px;">Logout</button>
+        </div>
+        <div id="blog-posts"></div>
+    </main>
+    <script>
+        // Check admin
+        const isAdmin = localStorage.getItem('isAdmin') === 'true';
+        const adminControls = document.getElementById('admin-controls');
+        if(isAdmin) adminControls.style.display = 'block';
+
+        // Blog posts storage (localStorage)
+        function getPosts() {
+            return JSON.parse(localStorage.getItem('blogPosts') || '[]');
+        }
+        function savePosts(posts) {
+            localStorage.setItem('blogPosts', JSON.stringify(posts));
+        }
+
+        // Render posts
+        function renderPosts() {
+            const posts = getPosts();
+            const container = document.getElementById('blog-posts');
+            container.innerHTML = '';
+            if(posts.length === 0) {
+                container.innerHTML = '<p>No posts yet.</p>';
+                return;
+            }
+            posts.forEach((post, idx) => {
+                const postDiv = document.createElement('section');
+                postDiv.className = 'blog-post';
+                postDiv.innerHTML = `
+                    <h2 class="blog-title">${post.title}</h2>
+                    <p class="blog-meta">${post.meta}</p>
+                    <p class="blog-content">${post.content}</p>
+                    ${isAdmin ? `
+                        <button class="admin-btn" onclick="editPost(${idx})">Edit</button>
+                        <button class="admin-btn" onclick="deletePost(${idx})">Delete</button>
+                    ` : ''}
+                `;
+                container.appendChild(postDiv);
+            });
+        }
+
+        // Add post
+        if(isAdmin) {
+            document.getElementById('add-post-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const title = document.getElementById('post-title').value;
+                const meta = document.getElementById('post-meta').value;
+                const content = document.getElementById('post-content').value;
+                const posts = getPosts();
+                posts.unshift({title, meta, content});
+                savePosts(posts);
+                renderPosts();
+                this.reset();
+            });
+        }
+
+        // Edit post
+        window.editPost = function(idx) {
+            const posts = getPosts();
+            const post = posts[idx];
+            const title = prompt('Edit Title:', post.title);
+            if(title === null) return;
+            const meta = prompt('Edit Meta:', post.meta);
+            if(meta === null) return;
+            const content = prompt('Edit Content:', post.content);
+            if(content === null) return;
+            posts[idx] = {title, meta, content};
+            savePosts(posts);
+            renderPosts();
+        };
+
+        // Delete post
+        window.deletePost = function(idx) {
+            if(confirm('Delete this post?')) {
+                const posts = getPosts();
+                posts.splice(idx, 1);
+                savePosts(posts);
+                renderPosts();
+            }
+        };
+
+        // Logout feature
+        const logoutBtn = document.getElementById('logout-btn');
+        if(logoutBtn){
+            logoutBtn.onclick = function() {
+                localStorage.removeItem('isAdmin');
+                window.location.href = 'signin.html';
+            }
+        }
+
+        // Initial posts (if empty)
+        if(getPosts().length === 0) {
+            savePosts([
+                {
+                    title: "Welcome to the Techie Coolie Blog!",
+                    meta: "Posted on July 24, 2025 by Admin",
+                    content: "This is your first blog post. Share your tech journey, tutorials, or cool coding tips here!"
+                },
+                {
+                    title: "How to Start Coding",
+                    meta: "Posted on July 20, 2025 by TechieCoolie Team",
+                    content: "Coding is fun and rewarding. Start with a simple language like Python and build your way up!"
+                }
+            ]);
+        }
+
+        renderPosts();
+    </script>
+</body>
+</html>
